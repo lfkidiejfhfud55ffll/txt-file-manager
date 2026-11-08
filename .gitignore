@@ -1,0 +1,21 @@
+# 编译产物
+dist/
+*.exe
+*.pdb
+*.ilk
+*.obj
+
+# 开发辅助生成的图片
+tools/*.png
+
+# 编辑器 / 系统
+.vs/
+.idea/
+*.user
+*.suo
+Thumbs.db
+desktop.ini
+
+# 临时
+.tmp/
+*.log

@@ -1,0 +1,47 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 显示环境
+        shell: pwsh
+        run: |
+          $PSVersionTable.PSVersion
+          (Get-Item "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319\csc.exe").VersionInfo.FileVersion
+
+      - name: 编译
+        shell: pwsh
+        run: pwsh -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
+
+      - name: 自测
+        shell: pwsh
+        run: |
+          .\dist\TxtManager.exe --selftest
+          if ($LASTEXITCODE -ne 0) { throw "自测失败，退出码 $LASTEXITCODE" }
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: TxtManager-exe
+          path: dist/TxtManager.exe
+          if-no-files-found: error
+
+      - name: 打 tag 时自动发布
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/TxtManager.exe
+          generate_release_notes: true
