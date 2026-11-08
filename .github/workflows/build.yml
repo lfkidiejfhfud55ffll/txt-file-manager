@@ -29,8 +29,15 @@ jobs:
       - name: 自测
         shell: pwsh
         run: |
-          .\dist\TxtManager.exe --selftest
-          if ($LASTEXITCODE -ne 0) { throw "自测失败，退出码 $LASTEXITCODE" }
+          # TxtManager.exe 是 winexe（GUI 子系统），PowerShell 直接调用不会等待、
+          # 也不会设置 $LASTEXITCODE；用 cmd /c 包一层即可拿到真实退出码。
+          cmd /c ".\dist\TxtManager.exe --selftest > selftest.log 2>&1"
+          $code = $LASTEXITCODE
+          Get-Content 'selftest.log' -ErrorAction SilentlyContinue
+          if ($code -ne 0) { throw "自测失败，退出码 $code" }
+          if (-not (Select-String -Path 'selftest.log' -Pattern 'RESULT: PASS' -SimpleMatch -Quiet)) {
+            throw "自测输出中未找到 RESULT: PASS"
+          }
 
       - name: 上传构建产物
         uses: actions/upload-artifact@v4
